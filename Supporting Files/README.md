@@ -26,11 +26,11 @@ This project is intended to predict the outcome of college football games given 
 
 ## Authors
 
-Alex Hunt alex.e.hunt-1@ou.edu (405)885-3808
-Eric Truong eric.m.truong-1@ou.edu
-Tuncer Schmidt tuncer.schmidt-1@ou.edu
-Chris Chow christopher.chow-1@ou.edu
-Sean Nguyen sean.m.nguyen-1@ou.edu
+* Alex Hunt alex.e.hunt-1@ou.edu
+* Eric Truong eric.m.truong-1@ou.edu
+* Tuncer Schmidt tuncer.schmidt-1@ou.edu
+* Chris Chow christopher.chow-1@ou.edu
+* Sean Nguyen sean.m.nguyen-1@ou.edu
 
 ## Version History
 
