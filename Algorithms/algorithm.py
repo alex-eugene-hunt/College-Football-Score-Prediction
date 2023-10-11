@@ -2,11 +2,14 @@ import pandas as pd
 import numpy as np
 import json
 import random
+import math
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import RepeatedKFold
 from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import r2_score
 from sklearn.metrics import confusion_matrix
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -142,10 +145,11 @@ k = 5
 n = 10
 kf = RepeatedKFold(n_splits=k, n_repeats=n, random_state=None)
 clf = LogisticRegression(penalty='l2', max_iter=10000, random_state=1)
+linReg = LinearRegression(fit_intercept=True)
 #clf = RandomForestClassifier(random_state=1)
 
-flag = False # set to True if you want to see Model Performance
-if (flag):
+outcome_flag = False # set to True if you want to see Model Performance
+if (outcome_flag):
     cv_results = []
 
     for train_index, test_index in kf.split(df):
@@ -181,7 +185,42 @@ if (flag):
 
     print(feature_importance_df)
 
+score_flag = True # set to True if you want to see Model Performance
+if (score_flag):
+    cv_results = []
 
+    for train_index, test_index in kf.split(df):
+        X_train, X_test = df.iloc[train_index], df.iloc[test_index]
+        y_train, y_test = X_train[['pointsScored', 'pointsAllowed']], X_test[['pointsScored', 'pointsAllowed']]
+
+        linReg.fit(X_train.drop(columns=['outcome', 'pointsScored', 'pointsAllowed']), y_train)
+
+        y_pred = linReg.predict(X_test.drop(columns=['outcome', 'pointsScored', 'pointsAllowed']))
+
+        accuracy = r2_score(y_test, y_pred)
+        cv_results.append(accuracy)
+
+    accuracies = np.array(cv_results)
+    average = round(accuracies.mean(), 3)
+    std = round(accuracies.std(), 3)
+
+    print("\n Model Accuracy: ", average, " +/- ", std)
+
+    # Important Features
+    
+    coefficients = linReg.coef_[0]
+    features = df.drop(columns=['outcome', 'pointsScored', 'pointsAllowed']).columns
+
+    feature_importance_df = pd.DataFrame({
+        'Feature': features,
+        'Coefficient': coefficients
+    })
+
+    feature_importance_df['Absolute Coefficient'] = feature_importance_df['Coefficient'].abs()
+    feature_importance_df = feature_importance_df.sort_values(by='Absolute Coefficient', ascending=False)
+    feature_importance_df = feature_importance_df.drop(columns=['Coefficient'])
+
+    print(feature_importance_df)
 
 ## Single Game Testing ##
 
@@ -223,3 +262,29 @@ else:
 print("\nPrediction: The", str(simluate_game.iloc[0]['name']), "will", finalOutcome, "against the",
       str(simluate_game.iloc[0]['opponent']), "at the", str(simluate_game.iloc[0]['league']), 
       "with", confidence_score, "percent confidence.\n")
+
+# Testing Score Prediction
+
+y_train_score = df[['pointsScored', 'pointsAllowed']]
+#y_train_score = y_train_score.to_numpy()
+y_test_score = test_match[['pointsScored', 'pointsAllowed']]
+#y_test_score = y_test_score.to_numpy()
+
+linReg.fit(x_train, y_train_score)
+
+y_val_pred = linReg.predict(x_test)
+
+# If a team wins, it must have a higher score
+if y_val_pred[0][0] > y_val_pred[0][1]:
+    y_val_pred_0 = math.ceil(y_val_pred[0][0])
+    y_val_pred_1 = math.floor(y_val_pred[0][1])
+elif y_val_pred[0][0] < y_val_pred[0][1]:
+    y_val_pred_0 = math.floor(y_val_pred[0][0])
+    y_val_pred_1 = math.ceil(y_val_pred[0][1])
+else:
+    y_val_pred_0 = round(y_val_pred[0][0])
+    y_val_pred_1 = round(y_val_pred[0][1])
+
+print("\nPrediction: The ", str(simluate_game.iloc[0]['name']), " will have a score of ",
+      y_val_pred_0, " and the ", str(simluate_game.iloc[0]['opponent']),
+      " will have a score of ", y_val_pred_1, ".\n", sep="")
