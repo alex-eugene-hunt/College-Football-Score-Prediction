@@ -395,6 +395,7 @@ def predict(dayOfWeek, location, name, opponent):
     :param location: Whether the game was at home or at the opponent's location or neither
     :param name: name of the first team
     :param opponent: name of the second team/opponent
+    :return output_str: output string with outcome and score predictions
     """
     # Need to obtain league of current player
     with open('Schedule.json', 'r') as f:
@@ -461,6 +462,14 @@ def predict(dayOfWeek, location, name, opponent):
     print("\nPrediction: The ", name, " will have a score of ",
           y_val_pred_0, " and the ", opponent,
           " will have a score of ", y_val_pred_1, ".\n", sep="") 
+    
+    output_str = (f"Prediction: The {name} will {finalOutcome} against the {opponent} "
+                  f"at the {league} with {confidence_score} percent confidence.\n\n"
+                  f"Prediction: The {name} will have a score of {y_val_pred_0} and the "
+                  f"{opponent} will have a score of {y_val_pred_1}.\n"
+                  )
+
+    return output_str
 
 if __name__ == "__main__":
     train_model()
