@@ -31,11 +31,19 @@ def load_dill(fname):
 def merge_schedules(oldD, newD):
     """
     Merges two schedule files and updates leagues
-    :param oldD: Old raw data, usually the previous full file
-    :param newD: New raw data, usually the file to take from to add to full file
+    :param oldD: Old raw data filename, usually the previous full file
+    :param newD: New raw data filename, usually the file to take from to add to full file
     """
+    with open(oldD, 'r') as f:
+        d = json.load(f) # loads the data into python
+    f.close()
+
+    with open(newD, 'r') as g:
+        newD = json.load(g) # loads the new data into python
+    g.close()
+    
     # Make copy of old data to append to
-    full_d = oldD.copy()
+    full_d = d
     
     # Iterate through new data and append to old data
     for team_data in newD['teams']:
@@ -56,7 +64,10 @@ def merge_schedules(oldD, newD):
             # Merge schedules
             existing['schedule'] = existing['schedule'] + team_data['schedule']
             
-    return full_d
+    # Save full data file for usage later
+    with open('Full_Schedule.json', 'w') as f:
+        json.dump(full_d, f, ensure_ascii=False, indent=2)
+    f.close()
 
 def get_data_as_dict(rawData):
     """
@@ -182,13 +193,9 @@ def load_data():
     Loads data from JSON file, maps custom values, and returns final DataFrame
     :return: Final DataFrame with custom values and removed N/A entries
     """
-    with open('Schedule.json', 'r') as f:
-        d = json.load(f) # loads the data into python
-
-    with open('Schedule(10-2-2023).json', 'r') as g:
-        newD = json.load(g) # loads the new data into python
-        
-    rawData = merge_schedules(d, newD)
+    with open('Full_Schedule.json', 'r') as f:
+        rawData = json.load(f) # loads the data into python
+    f.close()
 
 # =============================================================================
 #     oldDf = pd.json_normalize(data=d['teams'], record_path='schedule',
@@ -277,8 +284,6 @@ def train_model():
     kf = RepeatedKFold(n_splits=k, n_repeats=n, random_state=None)
     clf = LogisticRegression(penalty='l2', max_iter=10000, random_state=1)
     linReg = LinearRegression(fit_intercept=True)
-    
-    
 
     outcome_flag = False # set to True if you want to see Model Performance
     if (outcome_flag):
@@ -439,7 +444,7 @@ def predict(dayOfWeek, location, name, opponent):
     :return output_str: output string with outcome and score predictions
     """
     # Need to obtain league of current player
-    with open('Schedule.json', 'r') as f:
+    with open('Full_Schedule.json', 'r') as f:
         d = json.load(f) # loads the data into python
         
     df = pd.json_normalize(data=d['teams'], record_path='schedule',
@@ -451,7 +456,7 @@ def predict(dayOfWeek, location, name, opponent):
     # Convert input into DataFrame with column names
     x_test = pd.DataFrame(x_init, columns=['dayOfWeek', 'location', 'opponent', 'name', 'league'])
     # Map custom values
-    map_cust_vals(x_test)
+    map_cust_vals(d, x_test)
     
     # Encode the input game values to numbers
     encodings = load_dill("encodings.pkl")
@@ -513,5 +518,6 @@ def predict(dayOfWeek, location, name, opponent):
     return output_str
 
 if __name__ == "__main__":
+    merge_schedules("Schedule.json", "Schedule(10-2-2023).json")
     train_model()
     #predict("Sat", "N", "TCU Horned Frogs", "Michigan Wolverines")
