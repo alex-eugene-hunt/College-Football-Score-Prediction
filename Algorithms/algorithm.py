@@ -518,6 +518,11 @@ def predict(dayOfWeek, location, name, opponent):
     return output_str
 
 if __name__ == "__main__":
+    # Must run this first to merge data and obtain file that will be used
     #merge_schedules("Schedule.json", "Schedule(10-2-2023).json")
+    
+    # Must run this to train a model before doing predictions
     train_model()
+    
+    # Pick arguments and run this to make a prediction
     #predict("Sat", "N", "TCU Horned Frogs", "Michigan Wolverines")
