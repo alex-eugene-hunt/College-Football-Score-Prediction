@@ -392,9 +392,9 @@ def train_model():
     max_prob = max(instance_prob)
     confidence_score = round((max_prob / sum(instance_prob)) * 100, 2)
 
-    if y_val_pred == 0:
+    if y_val_pred == encodings[2].transform(['W']):
         finalOutcome = "WIN"
-    elif y_val_pred == 1:
+    elif y_val_pred == encodings[2].transform(['L']):
         finalOutcome = "LOSE"
     else:
         finalOutcome = "DRAW"
@@ -518,6 +518,6 @@ def predict(dayOfWeek, location, name, opponent):
     return output_str
 
 if __name__ == "__main__":
-    merge_schedules("Schedule.json", "Schedule(10-2-2023).json")
+    #merge_schedules("Schedule.json", "Schedule(10-2-2023).json")
     train_model()
     #predict("Sat", "N", "TCU Horned Frogs", "Michigan Wolverines")
