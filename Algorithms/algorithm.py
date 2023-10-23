@@ -32,7 +32,8 @@ def merge_schedules(oldD, newD):
     """
     Merges two schedule files and updates leagues
     :param oldD: Old raw data filename, usually the previous full file
-    :param newD: New raw data filename, usually the file to take from to add to full file
+    :param newD: New raw data filename, usually the file to take from to add to full file,
+        assumes no overlap with oldD
     """
     with open(oldD, 'r') as f:
         d = json.load(f) # loads the data into python
@@ -481,9 +482,9 @@ def predict(dayOfWeek, location, name, opponent):
     max_prob = max(instance_prob)
     confidence_score = round((max_prob / sum(instance_prob)) * 100, 2)
 
-    if y_val_pred == 0:
+    if y_val_pred == encodings[2].transform(['W']):
         finalOutcome = "WIN"
-    elif y_val_pred == 1:
+    elif y_val_pred == encodings[2].transform(['L']):
         finalOutcome = "LOSE"
     else:
         finalOutcome = "DRAW"
@@ -525,4 +526,4 @@ if __name__ == "__main__":
     train_model()
     
     # Pick arguments and run this to make a prediction
-    #predict("Sat", "N", "TCU Horned Frogs", "Michigan Wolverines")
+    predict("Sat", "N", "TCU Horned Frogs", "Michigan Wolverines")
