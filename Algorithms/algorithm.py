@@ -436,7 +436,7 @@ def train_model():
           y_val_pred_0, " and the ", str(simluate_game.iloc[0]['opponent']),
           " will have a score of ", y_val_pred_1, ".\n", sep="")   
 
-def predict(dayOfWeek, location, name, opponent):
+def predict1(dayOfWeek, location, name, opponent):
     """
     Loads models and makes prediction for outcome and scores of a game
     :param dayOfWeek: Day of the week of the game
@@ -527,4 +527,4 @@ if __name__ == "__main__":
     train_model()
     
     # Pick arguments and run this to make a prediction
-    predict("Sat", "N", "TCU Horned Frogs", "Michigan Wolverines")
+    predict1("Sat", "N", "TCU Horned Frogs", "Michigan Wolverines")

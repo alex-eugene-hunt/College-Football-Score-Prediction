@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Prediction</title>
+    <style>
+        body {
+            background: #fbf8f8;
+        }
+        .login {
+            text-align: center;
+            margin-top: 150px;
+            color: violet;
+        }
+        .input-group {
+            display: flex;
+            justify-content: center; /* Center the input fields horizontally */
+        }
+
+        input[type="text"] {
+            width: 30%; /* Allow input fields to adjust their width based on content */
+            padding: 10px; /* Reduce padding for smaller size */
+            margin: 5px; /* Add some margin for spacing */
+            border: none;
+            border-radius: 5px;
+        }
+
+        button[type="submit"] {
+            width: 30%;
+            padding: 10px;
+            background-color: blue; /* Change the background color to blue */
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            margin: 0 auto; /* Center the button horizontally */
+        }
+
+        h4 {
+            color: rgb(170, 13, 13);
+        }
+        h1 {
+            color: rgb(244, 15, 99);
+        }
+    </style>
+</head>
+<body>
+    <div class="login">
+        <h1>Game Prediction</h1>
+        <form action="{{ url_for('predict') }}" method="post">
+            <div class="input-group">
+                <input type="text" name="dayOfWeek" placeholder="Day of the Week" required="required">
+                <input type="text" name="location" placeholder="Location" required="required">
+            </div>
+            <div class="input-group">
+                <input type="text" name="FirstTeam" placeholder="Team 1" required="required">
+                <input type="text" name="SecondTeam" placeholder="Team 2" required="required">
+            </div>
+            <button type="submit">Predict</button>
+        </form>
+
+        <br><br>
+        <h4>{{ prediction_text }}</h4>
+    </div>
+</body>
+</html>
