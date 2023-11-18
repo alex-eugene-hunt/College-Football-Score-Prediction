@@ -519,12 +519,38 @@ def predict1(dayOfWeek, location, name, opponent):
 
     return output_str
 
+import json
+import os
+
+def get_list_of_teams(data_filename):
+    """
+    Extracts a list of team names from the JSON data file.
+    
+    :param data_filename: The filename of the JSON data file.
+    :return: A list of team names.
+    """
+    # Load the JSON data from the file
+    with open(os.path.join(os.path.dirname(__file__), data_filename), 'r') as f:
+        data = json.load(f)
+    
+    # Extract the list of team names
+    team_names = [team['name'] for team in data['teams']]
+    
+    # Use a set to remove duplicates and convert back to a list
+    unique_team_names = list(set(team_names))
+    
+    return unique_team_names
+
 if __name__ == "__main__":
     # Must run this first to merge data and obtain file that will be used
     #merge_schedules("Schedule.json", "Schedule(10-2-2023).json")
+    data_filename = 'Full_Schedule.json'
+    
+    # Call the function to get the list of teams
+    team_list = get_list_of_teams(data_filename)
     
     # Must run this to train a model before doing predictions
     train_model()
     
-    # Pick arguments and run this to make a prediction
+    # # Pick arguments and run this to make a prediction
     predict1("Sat", "N", "TCU Horned Frogs", "Michigan Wolverines")

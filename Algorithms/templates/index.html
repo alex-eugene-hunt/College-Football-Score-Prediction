@@ -15,26 +15,27 @@
         }
         .input-group {
             display: flex;
-            justify-content: center; /* Center the input fields horizontally */
+            flex-direction: column; /* Stack input fields vertically */
+            align-items: center; /* Center the input fields horizontally */
+            margin: 10px 0; /* Add vertical margin between input groups */
         }
 
-        input[type="text"] {
-            width: 30%; /* Allow input fields to adjust their width based on content */
-            padding: 10px; /* Reduce padding for smaller size */
-            margin: 5px; /* Add some margin for spacing */
+        input[type="text"], select {
+            width: 50%; /* Adjust the width as needed */
+            padding: 10px;
+            margin: 5px;
             border: none;
             border-radius: 5px;
         }
 
         button[type="submit"] {
-            width: 30%;
+            width: 50%;
             padding: 10px;
-            background-color: blue; /* Change the background color to blue */
+            background-color: blue;
             border: none;
             border-radius: 5px;
             color: white;
             font-size: 16px;
-            margin: 0 auto; /* Center the button horizontally */
         }
 
         h4 {
@@ -50,12 +51,40 @@
         <h1>Game Prediction</h1>
         <form action="{{ url_for('predict') }}" method="post">
             <div class="input-group">
-                <input type="text" name="dayOfWeek" placeholder="Day of the Week" required="required">
-                <input type="text" name="location" placeholder="Location" required="required">
+                <select name="dayOfWeek" required="required">
+                    <option value="" disabled selected>Select Day of the Week</option>
+                    <option value="Mon">Monday</option>
+                    <option value="Tue">Tuesday</option>
+                    <option value="Wed">Wednesday</option>
+                    <option value="Thu">Thursday</option>
+                    <option value="Fri">Friday</option>
+                    <option value="Sat">Saturday</option>
+                    <option value="Sun">Sunday</option>
+                </select>
             </div>
             <div class="input-group">
-                <input type="text" name="FirstTeam" placeholder="Team 1" required="required">
-                <input type="text" name="SecondTeam" placeholder="Team 2" required="required">
+                <select name="location" required="required">
+                    <option value="" disabled selected>Select Location</option>
+                    <option value="vs.">Away</option>
+                    <option value="@">Home</option>
+                    <option value="N">Guest</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <select name="FirstTeam" required="required">
+                    <option value="" disabled selected>Select Team 1</option>
+                    {% for team in unique_team_list %}
+                    <option value="{{ team }}">{{ team }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="input-group">
+                <select name="SecondTeam" required="required">
+                    <option value="" disabled selected>Select Team 2</option>
+                    {% for team in unique_team_list %}
+                    <option value="{{ team }}">{{ team }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <button type="submit">Predict</button>
         </form>
