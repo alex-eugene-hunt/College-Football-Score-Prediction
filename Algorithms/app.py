@@ -3,6 +3,7 @@ from flask import Flask, request, render_template
 from algorithm import train_model
 from algorithm import predict1
 import pickle
+from algorithm import get_list_of_teams
 
 
 app = Flask(__name__)
@@ -11,7 +12,12 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    data_filename = 'Full_Schedule.json'
+    
+    # Call the function to get the list of unique team names
+    unique_team_list = get_list_of_teams(data_filename)
+    #print(unique_team_list)
+    return render_template('index.html', unique_team_list=unique_team_list)
 
 @app.route('/predict', methods = ['POST'])
 def predict():
