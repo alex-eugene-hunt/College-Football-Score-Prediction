@@ -18,6 +18,7 @@
             flex-direction: column; /* Stack input fields vertically */
             align-items: center; /* Center the input fields horizontally */
             margin: 10px 0; /* Add vertical margin between input groups */
+            
         }
 
         input[type="text"], select {
@@ -27,8 +28,32 @@
             border: none;
             border-radius: 5px;
         }
+        /* CSS for the second button */
+/* CSS for the first button */
+        .button1 {
+            width: 50%;
+            padding: 10px;
+            background-color: green; /* Change this color to the desired color for the first button */
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
 
-        button[type="submit"] {
+
+        .button2 {
+            width: 50%;
+            padding: 10px;
+            background-color: red; /* Change this color to the desired color for the second button */
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        button {
             width: 50%;
             padding: 10px;
             background-color: blue;
@@ -36,6 +61,7 @@
             border-radius: 5px;
             color: white;
             font-size: 16px;
+            margin-bottom: 5px;
         }
 
         h4 {
@@ -86,8 +112,10 @@
                     {% endfor %}
                 </select>
             </div>
-            <button type="submit">Predict</button>
+            <button type="submit" class="button1">Predict</button>
         </form>
+        <button type="button" class="button2" onclick="window.location.href='/';">Click To Restart</button>
+
 
         <br><br>
         <h4>{{ prediction_text }}</h4>
