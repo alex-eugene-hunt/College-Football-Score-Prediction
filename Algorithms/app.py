@@ -8,7 +8,7 @@ from algorithm import get_list_of_teams
 
 app = Flask(__name__)
 
-##model = pickle.load(open('models/clf_model.pkl', 'rb'))
+
 
 @app.route('/')
 def home():
@@ -27,7 +27,6 @@ def predict():
     train_model()
     prediction = predict1(text_features[0], text_features[1], text_features[2], text_features[3])
 
-    ##output = round(prediction[0], 2)
     return render_template('index.html', prediction_text='Output {}'.format(prediction))
 
 if __name__ == "__main__":
