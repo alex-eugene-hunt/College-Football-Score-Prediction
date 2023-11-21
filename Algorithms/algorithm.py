@@ -5,7 +5,6 @@ import random
 import math
 import pickle
 import dill
-import os
 from datetime import datetime
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import RepeatedKFold
@@ -26,7 +25,7 @@ def load_dill(fname):
     :return obj: Object to retrieve from file
     """
     # Load the object from a pickle/dill file
-    obj = dill.load(open("%s"%(os.path.join(os.path.dirname(__file__), fname)), "rb"))
+    obj = dill.load(open("%s"%(fname), "rb"))
     return obj
 
 def merge_schedules(oldD, newD):
@@ -36,11 +35,11 @@ def merge_schedules(oldD, newD):
     :param newD: New raw data filename, usually the file to take from to add to full file,
         assumes no overlap with oldD
     """
-    with open(os.path.join(os.path.dirname(__file__), oldD), 'r') as f:
+    with open(oldD, 'r') as f:
         d = json.load(f) # loads the data into python
     f.close()
 
-    with open(os.path.join(os.path.dirname(__file__), newD), 'r') as g:
+    with open(newD, 'r') as g:
         newD = json.load(g) # loads the new data into python
     g.close()
     
@@ -67,7 +66,7 @@ def merge_schedules(oldD, newD):
             existing['schedule'] = existing['schedule'] + team_data['schedule']
             
     # Save full data file for usage later
-    with open(os.path.join(os.path.dirname(__file__), 'Full_Schedule.json'), 'w') as f:
+    with open('Full_Schedule.json', 'w') as f:
         json.dump(full_d, f, ensure_ascii=False, indent=2)
     f.close()
 
@@ -195,7 +194,7 @@ def load_data():
     Loads data from JSON file, maps custom values, and returns final DataFrame
     :return: Final DataFrame with custom values and removed N/A entries
     """
-    with open(os.path.join(os.path.dirname(__file__), 'Full_Schedule.json'), 'r') as f:
+    with open('Full_Schedule.json', 'r') as f:
         rawData = json.load(f) # loads the data into python
     f.close()
 
@@ -257,7 +256,7 @@ def train_model():
     # Obtain encodings for non-numerical columns
     # Encodings are in the order of day, location, outcome, league, team
     encodings = get_encodings(df)
-    fp = open(os.path.join(os.path.dirname(__file__), 'encodings.pkl'), "wb")
+    fp = open("encodings.pkl", "wb")
     dill.dump(encodings, fp)
     fp.close()
     
@@ -381,7 +380,7 @@ def train_model():
 
     clf.fit(x_train, y_train)
     
-    fp = open(os.path.join(os.path.dirname(__file__), 'clf_model.pkl'), "wb")
+    fp = open("clf_model.pkl", "wb")
     dill.dump(clf, fp)
     fp.close()
 
@@ -414,7 +413,7 @@ def train_model():
 
     linReg.fit(x_train, y_train_score)
     
-    fp = open(os.path.join(os.path.dirname(__file__), 'linReg_model.pkl'), "wb")
+    fp = open("linReg_model.pkl", "wb")
     dill.dump(linReg, fp)
     fp.close() 
     
@@ -436,7 +435,7 @@ def train_model():
           y_val_pred_0, " and the ", str(simluate_game.iloc[0]['opponent']),
           " will have a score of ", y_val_pred_1, ".\n", sep="")   
 
-def predict1(dayOfWeek, location, name, opponent):
+def predict(dayOfWeek, location, name, opponent):
     """
     Loads models and makes prediction for outcome and scores of a game
     :param dayOfWeek: Day of the week of the game
@@ -446,7 +445,7 @@ def predict1(dayOfWeek, location, name, opponent):
     :return output_str: output string with outcome and score predictions
     """
     # Need to obtain league of current player
-    with open(os.path.join(os.path.dirname(__file__), 'Full_Schedule.json'), 'r') as f:
+    with open('Full_Schedule.json', 'r') as f:
         d = json.load(f) # loads the data into python
         
     df = pd.json_normalize(data=d['teams'], record_path='schedule',
@@ -511,46 +510,28 @@ def predict1(dayOfWeek, location, name, opponent):
           y_val_pred_0, " and the ", opponent,
           " will have a score of ", y_val_pred_1, ".\n", sep="") 
     
-    output_str = (f"Prediction: The {name} will {finalOutcome} against the {opponent} "
+    output_str = ""
+
+    if (confidence_score > 70):
+        output_str = (f"Prediction: The {name} will {finalOutcome} against the {opponent} "
                   f"at the {league} with {confidence_score} percent confidence.\n\n"
                   f"Prediction: The {name} will have a score of {y_val_pred_0} and the "
                   f"{opponent} will have a score of {y_val_pred_1}.\n"
                   )
+    else:
+        output_str = (f"Prediction: The {name} will {finalOutcome} against the {opponent} "
+                  f"at the {league} with {confidence_score} percent confidence.\n\n"
+                  f"Scores are not reliable with a lower confidence score.\n"
+                  )
 
     return output_str
-
-import json
-import os
-
-def get_list_of_teams(data_filename):
-    """
-    Extracts a list of team names from the JSON data file.
-    
-    :param data_filename: The filename of the JSON data file.
-    :return: A list of team names.
-    """
-    # Load the JSON data from the file
-    with open(os.path.join(os.path.dirname(__file__), data_filename), 'r') as f:
-        data = json.load(f)
-    
-    # Extract the list of team names
-    team_names = [team['name'] for team in data['teams']]
-    
-    # Use a set to remove duplicates and convert back to a list
-    unique_team_names = list(set(team_names))
-    
-    return unique_team_names
 
 if __name__ == "__main__":
     # Must run this first to merge data and obtain file that will be used
     #merge_schedules("Schedule.json", "Schedule(10-2-2023).json")
-    data_filename = 'Full_Schedule.json'
-    
-    # Call the function to get the list of teams
-    team_list = get_list_of_teams(data_filename)
     
     # Must run this to train a model before doing predictions
     train_model()
     
-    # # Pick arguments and run this to make a prediction
-    predict1("Sat", "N", "TCU Horned Frogs", "Michigan Wolverines")
+    # Pick arguments and run this to make a prediction
+    predict("Sat", "N", "TCU Horned Frogs", "Michigan Wolverines")
