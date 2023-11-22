@@ -1,0 +1,41 @@
+INSTRUCTIONS FOR SETTING UP SERVER:
+
+Step 1: Follow the instructions at https://cloud.google.com/sdk/docs/install-sdk to install the Google Cloud CLI.
+
+	1.1: This requires a billing account to use Google Cloud, such as from a free trial or an education coupon.
+
+	1.2: If using any environments or own versions of Python, make an environment variable called CLOUDSDK_PYTHON and link it to
+		the desired python.exe, such as the python.exe found in the directory of the conda environment you use. These
+		environment variables are part of your system settings, and instructions for how to modify them can be found online.
+
+	1.3: To reliably use commands, run them from the Google Cloud SDK Shell, and just navigate to the directory of the main py file.
+
+	1.4: There may or may not be a need to run 'gcloud auth application-default login' for some parts of the code to work, such as the
+		file writing. If the file writing does not work on the server, then try this command.
+
+Step 2: Refer to https://www.freecodecamp.org/news/how-to-build-a-web-application-using-flask-and-deploy-it-to-the-cloud-3551c985e492/
+	for references on steps of how to set up a Flask deployment with Google App Engine.
+
+	2.1: This tutorial is based off of Python 2. Python 3 will not require api_version, threadsafe, or the libraries in app.yaml.
+		An error will occur if they are included.
+	
+	2.2: Make sure to include ALL necessary packages in requirements.txt to run the python files.
+
+	2.3: There may be a need to install the 'google-cloud-storage' package for Python, especially if locally testing the writing to 
+		Google Cloud Storage instead of testing on the server.
+
+	2.4: The files are being written to a Google Cloud Storage bucket. The name of the bucket will be different depending on your
+		project name, so it may have to be changed accordingly in the code.
+		Refer to https://cloud.google.com/appengine/docs/standard/using-cloud-storage?tab=python for more info.
+
+	2.5: The command to redeploy the server is 'gcloud app deploy --project <project ID>'
+
+	2.6: Make sure to use the command 'pip install -t lib -r requirements.txt' before deploying the server
+
+Step 3: Refer to https://cloud.google.com/appengine/docs/flexible/scheduling-jobs-with-cron-yaml for how to create a cron.yaml file to
+	set up scheduled jobs on Google Cloud.
+
+	3.1: If needed, you can manually force a run from the page on the Google Cloud dashboard that manages the cron jobs.
+
+	3.2: The command to deploy the cron job file is 'gcloud app deploy cron.yaml --project <project ID>'. Keep in mind that this
+		DOES NOT redeploy the rest of the files. They will have to be redeployed with the command found in previous instructions.

@@ -1,0 +1,4 @@
+cron:
+- description: "daily schedule pull job"
+  url: /apipull
+  schedule: every day 04:00

@@ -1,0 +1,7 @@
+Dill
+Flask
+Numpy
+Pandas
+Werkzeug==2.3.0
+scikit-learn
+google-cloud-storage

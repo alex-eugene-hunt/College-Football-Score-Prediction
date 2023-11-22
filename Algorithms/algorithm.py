@@ -6,6 +6,7 @@ import math
 import pickle
 import dill
 import os
+import requests
 from datetime import datetime
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import RepeatedKFold
@@ -18,6 +19,22 @@ from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import LabelEncoder
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
+
+def pull_schedule(fname):
+    """
+    Pulls the newest schedule JSON using the API
+    :param fname: file name to save the JSON as
+    """
+    api_url = "http://www.pepplerstats.com/SportsAggregator/API/?CAPSTONE=JSON&SPORT=NCAAF"
+    
+    # Pull the latest schedule JSON
+    response = requests.get(api_url)
+    schedule = response.json()
+    
+    # Save the schedule file
+    with open(os.path.join(os.path.dirname(__file__), fname), 'w') as f:
+        json.dump(schedule, f, ensure_ascii=False, indent=2)
+    f.close()
 
 def load_dill(fname):
     """
@@ -53,18 +70,35 @@ def merge_schedules(oldD, newD):
         league = team_data['league']
         
         # Find existing entry for the team in full_df, otherwise it is None
-        existing = next((item for item in full_d['teams'] if item['name'] == team_name), None)
+        existing_team = next((item for item in full_d['teams'] if item['name'] == team_name), None)
         
         # If team is not in full_df, add it
-        if existing is None:
+        if existing_team is None:
             full_d['teams'].append(team_data)
         else:
             # Update to new league if needed
-            if existing['league'] != league:
-                existing['league'] = league
+            if existing_team['league'] != league:
+                existing_team['league'] = league
+                
+            existing_schedule = existing_team['schedule']
+                
+            # Search through schedules of current team to replace old entries
+            # Iterate through each day of the current team's schedule
+            for day in team_data['schedule']:
+                timestamp = day['timestamp']
+                # Find matching day in full_df
+                existing_day = next((item for item in existing_schedule if item['timestamp'] == timestamp), None)
+                
+                # Update day if matching day was found and it had been updated
+                if existing_day is not None:
+                    if day['outcome'] != existing_day['outcome']:
+                        existing_day = day
+                else:  
+                    # If not found, add the day to the full schedule
+                    existing_schedule.append(day)
                 
             # Merge schedules
-            existing['schedule'] = existing['schedule'] + team_data['schedule']
+            #existing['schedule'] = existing['schedule'] + team_data['schedule']
             
     # Save full data file for usage later
     with open(os.path.join(os.path.dirname(__file__), 'Full_Schedule.json'), 'w') as f:
@@ -79,12 +113,6 @@ def get_data_as_dict(rawData):
     :param rawData: Raw data from JSON file to obtain custom values from
     :return: DataFrame showing custom values for each team
     """
-# =============================================================================
-#     #open the json as read only
-#     with open('Schedule.json', 'r') as f:
-#         data = json.load(f) # loads the data into python
-# =============================================================================
-
     # Use merged data from the files
     data = rawData
    
@@ -198,16 +226,6 @@ def load_data():
     with open(os.path.join(os.path.dirname(__file__), 'Full_Schedule.json'), 'r') as f:
         rawData = json.load(f) # loads the data into python
     f.close()
-
-# =============================================================================
-#     oldDf = pd.json_normalize(data=d['teams'], record_path='schedule',
-#                             meta=['name', 'league'])
-#     print(oldDf)
-#     
-#     newDF = pd.json_normalize(data=newD['teams'], record_path='schedule',
-#                             meta=['name', 'league'])  
-#     print(newDF)
-# =============================================================================
     
     df = pd.json_normalize(data=rawData['teams'], record_path='schedule',
                             meta=['name', 'league'])
@@ -242,18 +260,6 @@ def train_model():
     print("\nSimulated Game:")
     print(simluate_game)
 
-
-
-    # DataFrame Cleaning (OLD)
-# =============================================================================
-#     df['dayOfWeek'], labelDay = pd.factorize(df.dayOfWeek)
-#     df['location'], labelLocation = pd.factorize(df.location)
-#     df['outcome'], labelOutcome = pd.factorize(df.outcome)
-#     df['pointsScored'] = df['pointsScored'].astype(str).astype(np.int64)
-#     df['pointsAllowed'] = df['pointsAllowed'].astype(str).astype(np.int64)
-#     df['league'], labelLeague = pd.factorize(df.league)
-# =============================================================================
-
     # Obtain encodings for non-numerical columns
     # Encodings are in the order of day, location, outcome, league, team
     encodings = get_encodings(df)
@@ -268,17 +274,8 @@ def train_model():
     df['pointsAllowed'] = df['pointsAllowed'].astype(str).astype(np.int64)
     df['league'] = encodings[3].transform(df['league'])
 
-    # mapping unique team names (OLD)
-# =============================================================================
-#     uniqueTeams = np.unique(df[['name', 'opponent']])
-#     factors = np.arange(len(uniqueTeams))
-#     df[['name', 'opponent']] = df[['name', 'opponent']].replace(uniqueTeams, factors).astype(np.int64)
-# =============================================================================
-
     df['name'] = encodings[4].transform(df['name'])
     df['opponent'] = encodings[4].transform(df['opponent'])
-
-    # print(df.dtypes, "\n")
 
     # Model Testing
     k = 5
@@ -364,20 +361,18 @@ def train_model():
     # Comment out if not doing random test prediction
     ## Single Game Testing ##
 
-    test_game = df.iloc[z]
-    test_match = pd.DataFrame([test_game])
-    df = df.drop(df.index[z])
-    print("\nSimulated Game (Formatted):")
-    print(test_match)
+# =============================================================================
+#     test_game = df.iloc[z]
+#     test_match = pd.DataFrame([test_game])
+#     df = df.drop(df.index[z])
+#     print("\nSimulated Game (Formatted):")
+#     print(test_match)
+# =============================================================================
 
     y_train = df['outcome']
     x_train = df.drop(columns=['outcome', 'pointsScored', 'pointsAllowed']) 
-    y_test = test_match['outcome']
-    x_test = test_match.drop(columns=['outcome', 'pointsScored', 'pointsAllowed']) 
-
-
-    #x_train, x_test, y_train, y_test = train_test_split(df, labels, test_size=0.2, random_state=None)
-    # x_train2, x_val2, y_train2, y_val2 = train_test_split(x_train, y_train, test_size=0.25, random_state=1) # 0.25 x 0.8 = 0.2
+    #y_test = test_match['outcome']
+    #x_test = test_match.drop(columns=['outcome', 'pointsScored', 'pointsAllowed']) 
 
     clf.fit(x_train, y_train)
     
@@ -386,31 +381,33 @@ def train_model():
     fp.close()
 
     # Comment out if not doing random test prediction
-    y_val_pred = clf.predict(x_test)
-
-    # Confidence Score
-    probability = clf.predict_proba(x_test)
-    instance_prob = probability[0]
-    max_prob = max(instance_prob)
-    confidence_score = round((max_prob / sum(instance_prob)) * 100, 2)
-
-    if y_val_pred == encodings[2].transform(['W']):
-        finalOutcome = "WIN"
-    elif y_val_pred == encodings[2].transform(['L']):
-        finalOutcome = "LOSE"
-    else:
-        finalOutcome = "DRAW"
-
-    print("\nPrediction: The", str(simluate_game.iloc[0]['name']), "will", finalOutcome, "against the",
-          str(simluate_game.iloc[0]['opponent']), "at the", str(simluate_game.iloc[0]['league']), 
-          "with", confidence_score, "percent confidence.\n")
+# =============================================================================
+#     y_val_pred = clf.predict(x_test)
+# 
+#     # Confidence Score
+#     probability = clf.predict_proba(x_test)
+#     instance_prob = probability[0]
+#     max_prob = max(instance_prob)
+#     confidence_score = round((max_prob / sum(instance_prob)) * 100, 2)
+# 
+#     if y_val_pred == encodings[2].transform(['W']):
+#         finalOutcome = "WIN"
+#     elif y_val_pred == encodings[2].transform(['L']):
+#         finalOutcome = "LOSE"
+#     else:
+#         finalOutcome = "DRAW"
+# 
+#     print("\nPrediction: The", str(simluate_game.iloc[0]['name']), "will", finalOutcome, "against the",
+#           str(simluate_game.iloc[0]['opponent']), "at the", str(simluate_game.iloc[0]['league']), 
+#           "with", confidence_score, "percent confidence.\n")
+# =============================================================================
 
     # Testing Score Prediction
 
     y_train_score = df[['pointsScored', 'pointsAllowed']]
     y_train_score = y_train_score.to_numpy()
-    y_test_score = test_match[['pointsScored', 'pointsAllowed']]
-    y_test_score = y_test_score.to_numpy()
+    # = test_match[['pointsScored', 'pointsAllowed']]
+    #y_test_score = y_test_score.to_numpy()
 
     linReg.fit(x_train, y_train_score)
     
@@ -419,22 +416,24 @@ def train_model():
     fp.close() 
     
     # Comment out if not doing random test prediction
-    y_val_pred = linReg.predict(x_test)
-
-    # If a team wins, it must have a higher score
-    if y_val_pred[0][0] > y_val_pred[0][1]:
-        y_val_pred_0 = math.ceil(y_val_pred[0][0])
-        y_val_pred_1 = math.floor(y_val_pred[0][1])
-    elif y_val_pred[0][0] < y_val_pred[0][1]:
-        y_val_pred_0 = math.floor(y_val_pred[0][0])
-        y_val_pred_1 = math.ceil(y_val_pred[0][1])
-    else:
-        y_val_pred_0 = round(y_val_pred[0][0])
-        y_val_pred_1 = round(y_val_pred[0][1])
-
-    print("\nPrediction: The ", str(simluate_game.iloc[0]['name']), " will have a score of ",
-          y_val_pred_0, " and the ", str(simluate_game.iloc[0]['opponent']),
-          " will have a score of ", y_val_pred_1, ".\n", sep="")   
+# =============================================================================
+#     y_val_pred = linReg.predict(x_test)
+# 
+#     # If a team wins, it must have a higher score
+#     if y_val_pred[0][0] > y_val_pred[0][1]:
+#         y_val_pred_0 = math.ceil(y_val_pred[0][0])
+#         y_val_pred_1 = math.floor(y_val_pred[0][1])
+#     elif y_val_pred[0][0] < y_val_pred[0][1]:
+#         y_val_pred_0 = math.floor(y_val_pred[0][0])
+#         y_val_pred_1 = math.ceil(y_val_pred[0][1])
+#     else:
+#         y_val_pred_0 = round(y_val_pred[0][0])
+#         y_val_pred_1 = round(y_val_pred[0][1])
+# 
+#     print("\nPrediction: The ", str(simluate_game.iloc[0]['name']), " will have a score of ",
+#           y_val_pred_0, " and the ", str(simluate_game.iloc[0]['opponent']),
+#           " will have a score of ", y_val_pred_1, ".\n", sep="")   
+# =============================================================================
 
 def predict1(dayOfWeek, location, name, opponent):
     """
@@ -511,23 +510,28 @@ def predict1(dayOfWeek, location, name, opponent):
           y_val_pred_0, " and the ", opponent,
           " will have a score of ", y_val_pred_1, ".\n", sep="") 
     
-    output_str = (f"Prediction: The {name} will {finalOutcome} against the {opponent} "
-                  f"at the {league} with {confidence_score} percent confidence.\n\n"
-                  f"Prediction: The {name} will have a score of {y_val_pred_0} and the "
-                  f"{opponent} will have a score of {y_val_pred_1}.\n"
-                  )
+    output_str = ""
+    
+    if confidence_score > 70:
+        output_str = (f"Prediction: The {name} will {finalOutcome} against the {opponent} "
+                      f"at the {league} with {confidence_score} percent confidence.\n\n"
+                      f"The {name} will have a score of {y_val_pred_0} and the "
+                      f"{opponent} will have a score of {y_val_pred_1}.\n"
+                      )
+    else:
+        output_str = (f"Prediction: The {name} will {finalOutcome} against the {opponent} "
+                      f"at the {league} with {confidence_score} percent confidence.\n\n"
+                      f"Score predictions are not reliable with a lower confidence score.\n"
+                      )
 
     return output_str
-
-import json
-import os
 
 def get_list_of_teams(data_filename):
     """
     Extracts a list of team names from the JSON data file.
     
     :param data_filename: The filename of the JSON data file.
-    :return: A list of team names.
+    :return unique_team_names: A list of team names.
     """
     # Load the JSON data from the file
     with open(os.path.join(os.path.dirname(__file__), data_filename), 'r') as f:
@@ -542,15 +546,20 @@ def get_list_of_teams(data_filename):
     return unique_team_names
 
 if __name__ == "__main__":
+    # Run this to pull the latest schedule
+    #pull_schedule("New_Schedule.json")
+    
     # Must run this first to merge data and obtain file that will be used
-    #merge_schedules("Schedule.json", "Schedule(10-2-2023).json")
+    #merge_schedules("Schedule(2022-2023).json", "Schedule(10-2-2023).json")
+    merge_schedules("Full_Schedule.json", "New_Schedule.json")
+    
     data_filename = 'Full_Schedule.json'
     
     # Call the function to get the list of teams
     team_list = get_list_of_teams(data_filename)
     
     # Must run this to train a model before doing predictions
-    train_model()
+    #train_model()
     
-    # # Pick arguments and run this to make a prediction
-    predict1("Sat", "N", "TCU Horned Frogs", "Michigan Wolverines")
+    # Pick arguments and run this to make a prediction
+    #predict1("Sat", "N", "TCU Horned Frogs", "Michigan Wolverines")
