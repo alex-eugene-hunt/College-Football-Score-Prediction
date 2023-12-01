@@ -5,11 +5,7 @@ from algorithm import predict1
 import pickle
 from algorithm import get_list_of_teams
 
-
 app = Flask(__name__)
-
-
-
 @app.route('/')
 def home():
     data_filename = 'Full_Schedule.json'
